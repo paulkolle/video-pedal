@@ -15,8 +15,8 @@ friends see as an ordinary webcam.
     python loop_pedal.py                 # preview window + virtual camera
     python loop_pedal.py --no-vcam       # preview only, no OBS needed
     python loop_pedal.py --list-cameras  # find the index of your real webcam
-    python loop_pedal.py --key f13       # use a different pedal key
-    python loop_pedal.py --live-key f14  # use a different go-live key
+    python loop_pedal.py --key f13        # use a different pedal key
+    python loop_pedal.py --live-key f14  # use a different go-live key (macOS default: fn)
     python loop_pedal.py --overlay 0     # preview shows exactly what the call sees
 """
 
@@ -254,10 +254,43 @@ class LoopPedal:
 # Global hotkey ("the pedal")
 # --------------------------------------------------------------------------- #
 
+MACOS_FN_VK = 0x3F
+DEFAULT_LIVE_KEY = "fn" if sys.platform == "darwin" else "cmd_r"
+
+
+def configure_fn_events(keyboard) -> None:
+    """Teach pynput that macOS's Fn modifier has press/release events."""
+    if sys.platform != "darwin":
+        return
+    try:
+        import Quartz
+
+        fn_flag = getattr(Quartz, "kCGEventFlagMaskSecondaryFn")
+        fn = keyboard.KeyCode.from_vk(MACOS_FN_VK)
+        modifier_flags = getattr(keyboard.Listener, "_MODIFIER_FLAGS")
+        modifier_flags.setdefault(fn, fn_flag)
+    except (ImportError, AttributeError):
+        # Fn is not a portable OS key. The normal listener still works for
+        # keyboards that expose it as an ordinary key event.
+        pass
+
+
 def parse_key(keyboard, name: str):
-    name = name.strip()
+    name = name.strip().lower()
+    if name == "fn":
+        if sys.platform != "darwin":
+            raise SystemExit("The 'fn' alias is only available on macOS; use identify_key.py to find a key")
+        return keyboard.KeyCode.from_vk(MACOS_FN_VK)
+    if name.startswith("vk:"):
+        try:
+            vk = int(name[3:], 0)
+        except ValueError:
+            raise SystemExit(f"Invalid virtual key code {name!r}; use vk:<number>")
+        if vk < 0:
+            raise SystemExit(f"Invalid virtual key code {name!r}; it must not be negative")
+        return keyboard.KeyCode.from_vk(vk)
     if len(name) == 1:
-        return keyboard.KeyCode.from_char(name.lower())
+        return keyboard.KeyCode.from_char(name)
     try:
         return keyboard.Key[name.lower()]
     except KeyError:
@@ -275,6 +308,7 @@ class Pedal:
 
     def __init__(self, key_name: str, events: queue.Queue, live_key_name: str | None = None):
         from pynput import keyboard  # imported lazily so --no-pedal works without it
+        configure_fn_events(keyboard)
         self._key = parse_key(keyboard, key_name)
         self._live_key = parse_key(keyboard, live_key_name) if live_key_name else None
         if self._live_key is not None and self._live_key == self._key:
@@ -461,7 +495,7 @@ _MODIFIERS = {
     "darwin": {"alt": "Option", "cmd": "Command", "ctrl": "Control", "shift": "Shift"},
     "win32": {"alt": "Alt", "cmd": "Win", "ctrl": "Ctrl", "shift": "Shift"},
 }.get(sys.platform, {"alt": "Alt", "cmd": "Super", "ctrl": "Ctrl", "shift": "Shift"})
-KEY_LABELS = {"alt_gr": "AltGr"}
+KEY_LABELS = {"alt_gr": "AltGr", "fn": "Fn"}
 for _key, _label in _MODIFIERS.items():
     KEY_LABELS.update({_key: _label, f"{_key}_l": f"left {_label}", f"{_key}_r": f"right {_label}"})
 
@@ -558,9 +592,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--fps", type=float, default=30.0, help="output frame rate (default 30)")
     ap.add_argument("--key", default="alt_r",
                     help=f"pedal key, held to record (default alt_r = {key_label('alt_r')}; try f13, or a letter)")
-    ap.add_argument("--live-key", default="cmd_r",
+    ap.add_argument("--live-key", default=DEFAULT_LIVE_KEY,
                     help="key that ends the loop (or cancels a recording) with one press "
-                         f"(default cmd_r = {key_label('cmd_r')}; try f14)")
+                         f"(default {DEFAULT_LIVE_KEY} = {key_label(DEFAULT_LIVE_KEY)}; try fn, f14, or vk:63)")
     ap.add_argument("--no-pedal", action="store_true", help="no global hotkey; control from the preview window only")
     ap.add_argument("--no-vcam", action="store_true", help="preview only; don't publish the virtual camera")
     ap.add_argument("--no-preview", action="store_true", help="don't open the preview window (Ctrl+C to quit)")

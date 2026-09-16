@@ -1,10 +1,11 @@
 import queue
+import sys
 
 import numpy as np
 import pytest
 
 from loop_pedal import (LIVE, LOOPING, RECORDING, LoopPedal, Pedal, Player, RawCodec, Recorder,
-                        blend_overlay, build_loop)
+                        blend_overlay, build_loop, parse_args, parse_key)
 
 
 def gray(value, size=4):
@@ -287,3 +288,19 @@ class TestPedal:
     def test_same_key_for_both_is_rejected(self, Key):
         with pytest.raises(SystemExit):
             self.make(key="alt_r", live_key="alt_r")
+
+    def test_raw_virtual_key_code_is_accepted(self, Key):
+        keyboard = pytest.importorskip("pynput.keyboard")
+        key = parse_key(keyboard, "vk:63")
+        assert key.vk == 63
+
+    def test_fn_alias_resolves_to_macos_function_key(self, Key):
+        if sys.platform != "darwin":
+            pytest.skip("macOS-only Fn virtual key")
+        keyboard = pytest.importorskip("pynput.keyboard")
+        key = parse_key(keyboard, "fn")
+        assert key.vk == 63
+
+    def test_macos_defaults_to_fn_as_live_key(self):
+        args = parse_args([])
+        assert args.live_key == ("fn" if sys.platform == "darwin" else "cmd_r")

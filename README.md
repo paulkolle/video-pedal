@@ -19,14 +19,16 @@ without any hardware.
 - **Release** and the recording plays on a loop. The seam is crossfaded, and playback
   starts just before the seam, so both the loop's own wrap-around and the cut from
   live to loop are half-second dissolves rather than jump cuts.
-- **Press right Command (⌘)** once and the loop dissolves back into the live feed.
+- **Press Fn** once on macOS (or the configured live key on Windows/Linux) and the
+  loop dissolves back to the live feed.
 - While a loop plays, the preview window ghosts it over the live camera at half
   opacity, so you can line yourself up with the loop before ending it.
 
-Both keys are global hotkeys and work while any other app has focus. On Windows and
-Linux the same defaults are right Alt and the right Windows / Super key (see
-[Keys on Windows and Linux](#keys-on-windows-and-linux)). Change them with `--key`
-and `--live-key`.
+Both keys are global hotkeys and work while any other app has focus. This fork uses
+Fn as the default live key on macOS, which suits a Windows keyboard without a right
+Command key. On Windows and Linux the defaults remain right Alt and the right
+Windows / Super key (see [Keys on Windows and Linux](#keys-on-windows-and-linux)).
+Change them with `--key` and `--live-key`.
 
 ## How it works
 
@@ -51,6 +53,9 @@ Per frame: camera → `LoopPedal.process()` → virtual camera + preview window.
   and ignores key-repeat. The live key only counts as a solo press: if any other key
   goes down while it's held (right-⌘+Tab, say), it's treated as a shortcut and
   ignored, so normal use of the focused app doesn't end the loop.
+- **Fn on macOS.** `fn` is supported as the macOS Function modifier (virtual key
+  code 63). `identify_key.py` prints the exact key name or `vk:<number>` to use for
+  unusual keyboards.
 - **Ghost preview.** `blend_overlay()` alpha-blends the loop frame over the live
   frame for the preview only; the virtual camera gets the plain loop.
 - **Camera discovery.** Once the OBS extension is installed, the virtual camera shows
@@ -60,7 +65,7 @@ Per frame: camera → `LoopPedal.process()` → virtual camera + preview window.
 - **Virtual camera.** `pyvirtualcam` publishes BGR frames to OBS's virtual camera
   device (a v4l2loopback device on Linux), which the OS exposes as a normal camera
   to every app.
-- **Tests.** 31 tests cover the loop builder, ring buffer, player, state machine
+- **Tests.** 34 tests cover the loop builder, ring buffer, player, state machine
   (including the dissolve to live), the overlay blend and the two-key hotkey mapping.
   They swap in a raw codec for JPEG and never touch a camera.
 
@@ -74,7 +79,7 @@ exercised, so reports welcome.
 ### 1. Python
 
 ```
-git clone https://github.com/haxybaxy/video-pedal
+git clone https://github.com/paulkolle/video-pedal
 cd video-pedal
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
@@ -138,7 +143,7 @@ You should see:
 ```
 Camera 0: 1280x720 @ 30 fps
 Pedal key: 'alt_r'  hold = record, release = loop  (works from any app)
-Live key:  'cmd_r'  press once = end the loop / cancel a recording, go live
+Live key:  'fn'     press once = end the loop / cancel a recording, go live
 Virtual camera: 'OBS Virtual Camera'  <- pick this camera in Zoom / Meet / Teams
 Preview keys: r = start/stop recording, l = go live, q = quit
 ```
@@ -157,6 +162,22 @@ prints it as `/dev/video10`).
 The key names are `pynput`'s and are the same everywhere; only the physical keys
 differ. `alt_r` is right Alt and `cmd_r` is the right Windows key (right Super on
 Linux). The HUD and `--help` show the local names.
+
+On macOS, `fn` is also accepted as the live key. This is useful with a Windows
+keyboard that has no right Command key:
+
+```
+python identify_key.py
+python loop_pedal.py --live-key fn
+# Falls AltGr als Aufnahmetaste gemeldet wird:
+python loop_pedal.py --key alt_gr --live-key fn
+```
+
+The helper prints both press and release events plus a ready-to-copy option. If
+pressing Fn produces no line, that keyboard handles Fn inside its firmware and does
+not send it to macOS; Python cannot use it as a global hotkey. In that case choose
+another key, such as `f14`, or remap Fn to an F-key in the keyboard's configuration
+software. On macOS, `vk:63` is the explicit equivalent of `fn`.
 
 Two things to watch for:
 
@@ -199,7 +220,7 @@ python loop_pedal.py --crossfade 0    # hard cuts at the seam and when going liv
 | flag | default | |
 |---|---|---|
 | `--key` | `alt_r` | pedal key. Modifier names like `alt_r`, `ctrl_r`, `shift_r`, function keys like `f13`, or a single letter (which also gets typed into whatever has focus). |
-| `--live-key` | `cmd_r` | go-live key, pressed once on its own to end the loop or cancel a recording. Same key names as `--key`; must differ from it. |
+| `--live-key` | `fn` macOS, `cmd_r` Windows/Linux | go-live key, pressed once on its own to end the loop or cancel a recording. Same key names as `--key`, plus macOS `fn` and raw `vk:<number>` codes; must differ from it. |
 | `--camera` | auto | OpenCV index of the real webcam; default is the first index that is a live sensor |
 | `--size` | `1280x720` | requested capture size |
 | `--fps` | `30` | output frame rate |
