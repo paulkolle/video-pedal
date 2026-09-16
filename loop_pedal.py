@@ -16,7 +16,7 @@ friends see as an ordinary webcam.
     python loop_pedal.py --no-vcam       # preview only, no OBS needed
     python loop_pedal.py --list-cameras  # find the index of your real webcam
     python loop_pedal.py --key f13        # use a different pedal key
-    python loop_pedal.py --live-key f14  # use a different go-live key (macOS default: fn)
+    python loop_pedal.py --live-key f14  # use a different go-live key (default: ctrl_r)
     python loop_pedal.py --overlay 0     # preview shows exactly what the call sees
 """
 
@@ -255,7 +255,7 @@ class LoopPedal:
 # --------------------------------------------------------------------------- #
 
 MACOS_FN_VK = 0x3F
-DEFAULT_LIVE_KEY = "fn" if sys.platform == "darwin" else "cmd_r"
+DEFAULT_LIVE_KEY = "ctrl_r"
 
 
 def configure_fn_events(keyboard) -> None:

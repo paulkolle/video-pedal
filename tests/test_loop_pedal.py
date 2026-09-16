@@ -1,5 +1,5 @@
 import queue
-import sys
+
 
 import numpy as np
 import pytest
@@ -295,12 +295,13 @@ class TestPedal:
         assert key.vk == 63
 
     def test_fn_alias_resolves_to_macos_function_key(self, Key):
+        import sys
         if sys.platform != "darwin":
             pytest.skip("macOS-only Fn virtual key")
         keyboard = pytest.importorskip("pynput.keyboard")
         key = parse_key(keyboard, "fn")
         assert key.vk == 63
 
-    def test_macos_defaults_to_fn_as_live_key(self):
+    def test_defaults_to_right_control_as_live_key(self):
         args = parse_args([])
-        assert args.live_key == ("fn" if sys.platform == "darwin" else "cmd_r")
+        assert args.live_key == "ctrl_r"
