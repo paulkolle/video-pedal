@@ -302,6 +302,7 @@ class TestPedal:
         key = parse_key(keyboard, "fn")
         assert key.vk == 63
 
-    def test_defaults_to_right_control_as_live_key(self):
+    def test_defaults_to_right_control_for_recording_and_shift_for_live(self):
         args = parse_args([])
-        assert args.live_key == "ctrl_r"
+        assert args.key == "ctrl_r"
+        assert args.live_key == "shift_r"

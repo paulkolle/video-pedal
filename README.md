@@ -14,18 +14,19 @@ without any hardware.
 
 ## What it does
 
-- **Hold right Option (⌥)** to record. The live feed keeps going out while you hold;
+- **Hold right Control** to record. The live feed keeps going out while you hold;
   the switch to the loop happens on release, not on press.
 - **Release** and the recording plays on a loop. The seam is crossfaded, and playback
   starts just before the seam, so both the loop's own wrap-around and the cut from
   live to loop are half-second dissolves rather than jump cuts.
-- **Press right Control** once and the loop dissolves back to the live feed.
+- **Press right Shift** once and the loop dissolves back to the live feed.
 - While a loop plays, the preview window ghosts it over the live camera at half
   opacity, so you can line yourself up with the loop before ending it.
 
 Both keys are global hotkeys and work while any other app has focus. This fork uses
-right Control (`ctrl_r`) as the default live key, which is available on the Windows
-keyboard. Change the keys with `--key` and `--live-key`.
+right Control (`ctrl_r`) for recording and right Shift (`shift_r`) for going live,
+which avoids interfering with AltGr while typing in a call. Change the keys with
+`--key` and `--live-key`.
 
 ## How it works
 
@@ -139,8 +140,8 @@ You should see:
 
 ```
 Camera 0: 1280x720 @ 30 fps
-Pedal key: 'alt_r'  hold = record, release = loop  (works from any app)
-Live key:  'ctrl_r' press once = end the loop / cancel a recording, go live
+Pedal key: 'ctrl_r' hold = record, release = loop  (works from any app)
+Live key:  'shift_r' press once = end the loop / cancel a recording, go live
 Virtual camera: 'OBS Virtual Camera'  <- pick this camera in Zoom / Meet / Teams
 Preview keys: r = start/stop recording, l = go live, q = quit
 ```
@@ -174,14 +175,12 @@ The key names are `pynput`'s and are the same everywhere; only the physical keys
 differ. `alt_r` is right Alt, `ctrl_r` is right Control, and `cmd_r` is the right
 Windows key (right Super on Linux). The HUD and `--help` show the local names.
 
-`fn` is still accepted as an alternative on macOS, but this fork defaults to the
-key that your helper identified as `ctrl_r`:
+`fn` is still accepted as an alternative on macOS, but this fork uses the two keys
+identified by your helper:
 
 ```
 uv run --with-requirements requirements.txt --no-project identify_key.py
-uv run --with-requirements requirements.txt --no-project loop_pedal.py --live-key ctrl_r
-# Falls AltGr als Aufnahmetaste gemeldet wird:
-uv run --with-requirements requirements.txt --no-project loop_pedal.py --key alt_gr --live-key ctrl_r
+uv run --with-requirements requirements.txt --no-project loop_pedal.py --key ctrl_r --live-key shift_r
 ```
 
 The helper prints both press and release events plus a ready-to-copy option. If
@@ -192,11 +191,9 @@ the explicit equivalent of `fn`.
 Two things to watch for:
 
 - **Tapping the Windows / Super key on its own opens the Start menu or the GNOME
-  overview**, which is exactly what the live key does. Use a different one, e.g.
-  `--live-key ctrl_r`.
+  overview**. This fork does not use it by default.
 - On keyboard layouts with **AltGr**, right Alt *is* AltGr and `pynput` reports it as
-  `alt_gr`, so `--key alt_r` never fires. Use `--key alt_gr`, or move the pedal to
-  `--key ctrl_r` and the live key to something else.
+  `alt_gr`. This fork deliberately avoids AltGr for the recording key.
 
 ## Controls
 
@@ -220,7 +217,7 @@ uv run --with-requirements requirements.txt --no-project loop_pedal.py --no-vcam
 uv run --with-requirements requirements.txt --no-project loop_pedal.py --list-cameras   # which index is the real webcam?
 uv run --with-requirements requirements.txt --no-project loop_pedal.py --camera 1       # use that index
 uv run --with-requirements requirements.txt --no-project loop_pedal.py --key f13        # different pedal key
-uv run --with-requirements requirements.txt --no-project loop_pedal.py --live-key f14   # different go-live key (or ctrl_r on Windows / Linux)
+uv run --with-requirements requirements.txt --no-project loop_pedal.py --live-key f14   # different go-live key (or shift_r on Windows / Linux)
 uv run --with-requirements requirements.txt --no-project loop_pedal.py --overlay 0      # no ghost: preview shows exactly what goes out
 uv run --with-requirements requirements.txt --no-project loop_pedal.py --crossfade 0    # hard cuts at the seam and when going live
 ```
@@ -229,8 +226,8 @@ uv run --with-requirements requirements.txt --no-project loop_pedal.py --crossfa
 
 | flag | default | |
 |---|---|---|
-| `--key` | `alt_r` | pedal key. Modifier names like `alt_r`, `ctrl_r`, `shift_r`, function keys like `f13`, or a single letter (which also gets typed into whatever has focus). |
-| `--live-key` | `ctrl_r` | go-live key, pressed once on its own to end the loop or cancel a recording. Same key names as `--key`, plus macOS `fn` and raw `vk:<number>` codes; must differ from it. |
+| `--key` | `ctrl_r` | pedal key. Modifier names like `alt_r`, `ctrl_r`, `shift_r`, function keys like `f13`, or a single letter (which also gets typed into whatever has focus). |
+| `--live-key` | `shift_r` | go-live key, pressed once on its own to end the loop or cancel a recording. Same key names as `--key`, plus macOS `fn` and raw `vk:<number>` codes; must differ from it. |
 | `--camera` | auto | OpenCV index of the real webcam; default is the first index that is a live sensor |
 | `--size` | `1280x720` | requested capture size |
 | `--fps` | `30` | output frame rate |
