@@ -154,6 +154,20 @@ cameras once at launch. Then pick the virtual camera in its video settings:
 **OBS Virtual Camera** on macOS and Windows, **Video Pedal** on Linux (the script
 prints it as `/dev/video10`).
 
+### Stream Deck toggle
+
+The personal Stream Deck setup uses the free bottom-right key on the active page.
+It opens `/Users/paul/Applications/Video Pedal.app`; the first press starts the
+loop pedal through `uv`, and the next press stops the same process. The toggle state
+is tracked in `~/Library/Logs/video-pedal/video-pedal.pid` and launcher output is
+written to `~/Library/Logs/video-pedal/launcher.log`.
+
+The same toggle can be invoked from a terminal:
+
+```
+uv run --with-requirements requirements.txt --no-project toggle_video_pedal.py
+```
+
 ### Keys on Windows and Linux
 
 The key names are `pynput`'s and are the same everywhere; only the physical keys
