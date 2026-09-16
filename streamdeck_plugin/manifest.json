@@ -1,0 +1,28 @@
+{
+  "UUID": "com.paul.video-pedal",
+  "SDKVersion": 2,
+  "Author": "Paul",
+  "CodePath": "plugin_launcher.sh",
+  "Name": "Video Pedal",
+  "Description": "Toggle Video Pedal and show its live, recording, and loop state.",
+  "Icon": "icons/live",
+  "Version": "1.0.0",
+  "URL": "https://github.com/paulkolle/video-pedal",
+  "OS": [
+    {"Platform": "mac", "MinimumVersion": "12.0"}
+  ],
+  "Software": {
+    "MinimumVersion": "6.0"
+  },
+  "Actions": [
+    {
+      "UUID": "com.paul.video-pedal.toggle",
+      "Name": "Video Pedal Toggle",
+      "Icon": "icons/live",
+      "States": [
+        {"Image": "icons/off"}
+      ],
+      "Tooltip": "Start/stop Video Pedal; shows LIVE, REC, or LOOP."
+    }
+  ]
+}

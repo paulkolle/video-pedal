@@ -34,6 +34,8 @@ import time
 import cv2
 import numpy as np
 
+from video_pedal_status import StatusWriter
+
 LIVE, RECORDING, LOOPING = "LIVE", "REC", "LOOP"
 
 
@@ -622,6 +624,8 @@ def main(argv=None) -> int:
 
     pedal = LoopPedal(JpegCodec(args.quality), args.fps, args.max_seconds, args.min_seconds,
                       args.crossfade, log=lambda m: print(time.strftime("%H:%M:%S"), m))
+    status = StatusWriter()
+    status.update(pedal.state, pedal.hud_info())
 
     events: queue.Queue = queue.Queue()
     hotkey = None
@@ -651,6 +655,8 @@ def main(argv=None) -> int:
 
     window = "loop pedal"
     failures = 0
+    last_status_at = time.monotonic()
+    last_status_state = pedal.state
     try:
         while True:
             ok, frame = cap.read()
@@ -677,6 +683,12 @@ def main(argv=None) -> int:
 
             out = pedal.process(frame)
 
+            now = time.monotonic()
+            if pedal.state != last_status_state or now - last_status_at >= 0.5:
+                status.update(pedal.state, pedal.hud_info())
+                last_status_at = now
+                last_status_state = pedal.state
+
             if vcam is not None:
                 vcam.send(out)
                 vcam.sleep_until_next_frame()
@@ -700,6 +712,7 @@ def main(argv=None) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        status.off()
         if hotkey is not None:
             hotkey.stop()
         if vcam is not None:

@@ -163,6 +163,51 @@ loop pedal through `uv`, and the next press stops the same process. The toggle s
 is tracked in `~/Library/Logs/video-pedal/video-pedal.pid` and launcher output is
 written to `~/Library/Logs/video-pedal/launcher.log`.
 
+The key now uses a small local Stream Deck plugin instead of the static `Open`
+action. It shows a red camera when Video Pedal is off, green `LIVE`, red `REC`
+while recording, and amber `LOOP` while a loop plays. The title also shows the
+recording time or loop position, for example `LOOP 3.2/8.0s`.
+
+The plugin is installed on macOS with:
+
+```
+./install_streamdeck_plugin.sh
+```
+
+Restart Stream Deck after installing or updating the plugin. Keep the action's
+custom image and title unset so the plugin can display its status and timers.
+The default `States[0].Image` in the **plugin** manifest is intentional; an `Image`
+or `Title` in the **profile page's** action state is a user override and takes
+precedence over dynamic updates. See [Elgato's key action documentation](https://docs.elgato.com/streamdeck/sdk/guides/keys/).
+
+If the key stays red even though `state.json` and `streamdeck-plugin.log` show
+`LIVE`, back up the affected profile page's `manifest.json`, fully quit Stream
+Deck, and verify its main process has exited. Then run:
+
+```
+python3 repair_streamdeck_profile.py "/path/to/profile-page/manifest.json"
+```
+
+The repair refuses to run while Stream Deck is open, creates a timestamped backup
+next to the manifest, and atomically removes only `Image` and `Title` overrides
+from Video Pedal actions on that page. Other actions and launcher settings are
+preserved. Restart Stream Deck, reread the manifest to check the overrides remain
+absent, and test LIVE → REC → LOOP → LIVE → OFF on the physical device.
+
+On 2026-09-16, Stream Deck 7.5.1 on macOS 26.5.1 reproduced this issue at slot
+`3,1`: the profile pinned `Images/VIDEO_PEDAL_OFF.png` and title `Video Pedal`.
+Removing those overrides fixed the display with the existing plugin and PNGs;
+all four states were then confirmed on the physical Stream Deck + by the user.
+The existing PNG data URLs, 144×144 16-bit RGBA images, and `target: 0` worked.
+This single-state action does not need `setState` for the four application modes.
+Wire tests cover the 125/126 and 65535/65536-byte frame boundaries, partial reads,
+all five actual icon messages, and server close reporting. The observed close
+was code 1000 (`Stop plugin`) during the deliberate restart, not an image error.
+
+Video Pedal publishes its state atomically to
+`~/Library/Logs/video-pedal/state.json`; a stale heartbeat is treated as off,
+so a crashed process does not leave a misleading green icon.
+
 The same toggle can be invoked from a terminal:
 
 ```
